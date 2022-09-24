@@ -1,0 +1,22 @@
+services:
+  app:
+    image: kennethreitz/httpbin:latest
+  envoy:
+    image: envoyproxy/envoy-dev:latest
+    ports:
+      - 8080:8080
+      - 9902:9902
+    volumes:
+      - ./ops/envoy-config.yaml:/etc/envoy/envoy.yaml
+  opa:
+    image: openpolicyagent/opa:0.44.0-envoy
+    volumes:
+      - ./ops/policy.rego:/config/policy.rego
+    command:
+      - "run"
+      - "--log-level=debug"
+      - "--log-format=json-pretty"
+      - "--server"
+      - "--set=plugins.envoy_ext_authz_grpc.path=envoy/authz/allow"  # default value
+      - "--set=decision_logs.console=true"
+      - "/config/policy.rego"
